@@ -1,0 +1,247 @@
+/* ---------- Custom properties (global theme + speed control) ---------- */
+:root {
+  --bg-color: #05070f;
+  --orbit-line-color: rgba(255, 255, 255, 0.15);
+  --label-color: #cfd8ff;
+  /* JS updates this value to speed up / slow down every animation at once */
+  --speed: 1;
+}
+
+/* ---------- Reset & base page setup ---------- */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* keep everything inside the viewport, no scrollbars */
+  background: var(--bg-color);
+  font-family: system-ui, sans-serif;
+  color: var(--label-color);
+}
+
+/* ---------- Starfield background ---------- */
+/* Stars are generated with repeating radial-gradients so no images are needed */
+.stars {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+    radial-gradient(1px 1px at 80% 10%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 30% 70%, #fff, transparent),
+    radial-gradient(1px 1px at 60% 40%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 90% 80%, #fff, transparent),
+    radial-gradient(1px 1px at 45% 90%, #fff, transparent),
+    radial-gradient(1px 1px at 15% 55%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 70% 65%, #fff, transparent),
+    radial-gradient(1px 1px at 25% 35%, #fff, transparent),
+    radial-gradient(1px 1px at 95% 45%, #fff, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.6;
+}
+
+/* ---------- Controls (pause button + speed slider) ---------- */
+.controls {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  font-size: 14px;
+}
+
+.controls button {
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #1c2340;
+  color: #fff;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.controls button:hover {
+  background: #2a3360;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- Solar system stage ---------- */
+/* This container is centered on screen; every orbit is positioned relative to it */
+.solar-system {
+  position: relative;
+  width: 0;
+  height: 0;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+}
+
+/* ---------- The Sun ---------- */
+.sun {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff6c8, #ffcc33 60%, #ff8c00 100%);
+  /* Layered box-shadow creates the glowing halo effect */
+  box-shadow:
+    0 0 20px 8px rgba(255, 204, 51, 0.8),
+    0 0 45px 20px rgba(255, 140, 0, 0.5),
+    0 0 80px 40px rgba(255, 100, 0, 0.25);
+}
+
+/* ---------- Orbits ---------- */
+/* Each .orbit is a circle centered on the sun that rotates via CSS animation.
+   --orbit-size is used as the radius; width/height are twice that. */
+.orbit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--orbit-size) * 2);
+  height: calc(var(--orbit-size) * 2);
+  margin-top: calc(var(--orbit-size) * -1);
+  margin-left: calc(var(--orbit-size) * -1);
+  border: 1px solid var(--orbit-line-color);
+  border-radius: 50%;
+  animation: spin var(--duration) linear infinite;
+  animation-duration: calc(var(--duration) / var(--speed));
+}
+
+/* Pausing is done by toggling this class on the .solar-system container */
+.solar-system.paused .orbit,
+.solar-system.paused .planet,
+.solar-system.paused .moon-orbit {
+  animation-play-state: paused;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Planets ---------- */
+/* A planet sits at the top edge of its orbit circle (i.e. one radius away from
+   the sun). It spins in the opposite direction of the orbit so it never looks
+   tilted and its label stays upright while traveling. */
+.planet {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--planet-size);
+  height: var(--planet-size);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  animation: counter-spin var(--duration) linear infinite;
+  animation-duration: calc(var(--duration) / var(--speed));
+}
+
+@keyframes counter-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+/* Approximate planet colors (not scientifically accurate) */
+.mercury { background: #b1a79b; }
+.venus   { background: #e8c27a; }
+.earth   { background: #3a7bd5; box-shadow: inset -3px -3px 4px rgba(0,0,0,0.4); }
+.mars    { background: #c1440e; }
+.jupiter { background: linear-gradient(90deg, #d8ae7e, #c68a4e); }
+.saturn  { background: #e3c98f; }
+.uranus  { background: #7fd4d0; }
+.neptune { background: #3c54a4; }
+
+/* ---------- Saturn's ring ---------- */
+.saturn-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--planet-size) * 2.4);
+  height: calc(var(--planet-size) * 0.6);
+  transform: translate(-50%, -50%) rotate(-20deg);
+  border: 2px solid rgba(230, 210, 160, 0.85);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ---------- Earth's Moon ---------- */
+/* The moon has its own small orbit nested inside the Earth planet element */
+.moon-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  margin-top: -13px;
+  margin-left: -13px;
+  animation: spin 2.5s linear infinite;
+  animation-duration: calc(2.5s / var(--speed));
+}
+
+.moon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #ccc;
+}
+
+/* ---------- Labels ---------- */
+.planet-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--label-color);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.sun .planet-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* ---------- Responsiveness ---------- */
+/* On smaller screens, scale the whole system down uniformly */
+@media (max-width: 1000px) {
+  .solar-system {
+    transform: scale(0.7);
+  }
+}
+
+@media (max-width: 650px) {
+  .solar-system {
+    transform: scale(0.45);
+  }
+  .controls {
+    font-size: 12px;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+}
